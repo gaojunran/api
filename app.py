@@ -16,7 +16,7 @@ def test():
 
 @app.get("/api/blog/test-mihome")
 def test_mihome():
-    url = "http://localhost:8123/api/services/light/toggle"
+    url = "http://localhost:8081/api/services/light/toggle"
     token = os.getenv("MIHOME_TOKEN")
     headers = {
         "Authorization": f"Bearer {token}",
