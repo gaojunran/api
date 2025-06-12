@@ -22,7 +22,7 @@ def test_mihome():
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
-    data = {"entity_id": "light.philips_cn_274401208_sread2_s_2_light"}
+    data = {"entity_id": os.getenv("MIHOME_LAMP_ID")}
     response = requests.post(url, headers=headers, json=data)
     return {"code": response.status_code, "data": response.text, "log": headers}
 
