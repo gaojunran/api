@@ -2,10 +2,11 @@ import os
 
 import requests
 from dotenv import load_dotenv
-from robyn import Robyn
+from robyn import ALLOW_CORS, Robyn
 
 load_dotenv()
 app = Robyn(__file__)
+ALLOW_CORS(app, "*")
 
 
 @app.get("/api/test")
