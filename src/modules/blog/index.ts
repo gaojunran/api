@@ -2,13 +2,29 @@ import Elysia, { t } from "elysia";
 import { db } from "../..";
 import { bookmarkTable } from "../../db/schema";
 
+const typeEnum = t.Enum({
+	post: "post",
+	tool: "tool",
+	book: "book",
+	movie: "movie",
+	drama: "drama",
+});
+
 export const blogApp = new Elysia({ prefix: "/blog" })
-	.get("/bookmarks/list", async () => {
-		const data = (await db.select().from(bookmarkTable)).filter(
-			(row) => !row.disabled,
-		);
-		return data;
-	})
+	.get(
+		"/bookmarks/list",
+		async ({ params }) => {
+			const data = (await db.select().from(bookmarkTable))
+				.filter((row) => !row.disabled)
+				.filter((row) => !params.type || row.type === params.type);
+			return data;
+		},
+		{
+			params: t.Object({
+				type: typeEnum,
+			}),
+		},
+	)
 	.post(
 		"/bookmarks/add",
 		async ({ body }) => {
@@ -22,13 +38,7 @@ export const blogApp = new Elysia({ prefix: "/blog" })
 				title: t.String(),
 				subtitle: t.String(),
 				url: t.String(),
-				type: t.Enum({
-					post: "post",
-					tool: "tool",
-					book: "book",
-					movie: "movie",
-					drama: "drama",
-				}),
+				type: typeEnum,
 			}),
 		},
 	);
