@@ -18,4 +18,17 @@ export const lmsApp = new Elysia({ prefix: "/lms" })
         email: t.String(),
       }),
     },
+  )
+  .post(
+    "/unsubscribe",
+    async ({ body }) => {
+      await db.read();
+      delete db.data[body.email];
+      return { status: "ok", message: "Unsubscribe successfully 🎉!" };
+    },
+    {
+      body: t.Object({
+        email: t.String(),
+      }),
+    },
   );
