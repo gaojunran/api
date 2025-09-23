@@ -11,6 +11,7 @@ export const lmsApp = new Elysia({ prefix: "/lms" })
     async ({ body }) => {
       await db.read();
       db.data[body.email] = body.email;
+      await db.write();
       return { status: "ok", message: "Subscribe successfully 🎉!" };
     },
     {
@@ -24,6 +25,7 @@ export const lmsApp = new Elysia({ prefix: "/lms" })
     async ({ body }) => {
       await db.read();
       delete db.data[body.email];
+      await db.write();
       return { status: "ok", message: "Unsubscribe successfully 🎉!" };
     },
     {
