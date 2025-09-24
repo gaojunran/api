@@ -1,6 +1,6 @@
 import Elysia, { t } from "elysia";
 import { JSONFile } from "lowdb/node"
-import { Low } from "lowdb/lib";
+import { Low } from "lowdb";
 
 const adapter = new JSONFile("../lms-cqupt-subscribe/receivers.json")
 const db: any = new Low(adapter, {});
