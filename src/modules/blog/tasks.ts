@@ -23,9 +23,18 @@ function getProjectName(projectId: string, projects: any): string {
   return project?.title || "Unknown";
 }
 
-// Helper function to format date as YYYY-MM-DD
+// Helper function to format date as YYYY-MM-DD in Beijing timezone (UTC+8)
 function formatDate(date: Date): string {
-  return date.toISOString().split("T")[0];
+  // Convert to Beijing time (UTC+8)
+  const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return beijingTime.toISOString().split("T")[0];
+}
+
+// Helper function to get current date in Beijing timezone
+function getBeijingDate(): Date {
+  const now = new Date();
+  // Add 8 hours to get Beijing time
+  return new Date(now.getTime() + 8 * 60 * 60 * 1000);
 }
 
 export const tasksApp = new Elysia({ prefix: "/tasks" })
@@ -39,8 +48,8 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
       const todayTag = data.mainModelData.tag.entities.TODAY;
       const todayTaskIds = todayTag?.taskIds || [];
 
-      // Get today's date in YYYY-MM-DD format
-      const todayString = formatDate(new Date());
+      // Get today's date in YYYY-MM-DD format (Beijing time)
+      const todayString = formatDate(getBeijingDate());
 
       // Build task list
       const taskList = todayTaskIds
@@ -70,8 +79,8 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
       const tasks = data.mainModelData.task;
       const projects = data.mainModelData.project;
 
-      // Get date range: today to 7 days from now
-      const today = new Date();
+      // Get date range: today to 7 days from now (Beijing time)
+      const today = getBeijingDate();
       const sevenDaysLater = new Date(today);
       sevenDaysLater.setDate(today.getDate() + 6);
 
