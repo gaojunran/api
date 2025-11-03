@@ -112,4 +112,67 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
     } catch (error) {
       throw new Error(`Failed to read tasks: ${error}`);
     }
+  })
+  .get("/projects", async () => {
+    try {
+      const data = await readMetaFile();
+      const tasks = data.mainModelData.task;
+      const projects = data.mainModelData.project;
+
+      // Build result object grouped by project
+      const projectTasks: Record<
+        string,
+        Array<{ name: string; dueDate: string | null; isDone: boolean }>
+      > = {};
+
+      // Iterate through all projects
+      for (const projectId of projects.ids) {
+        const project = projects.entities[projectId];
+        if (!project) continue;
+
+        const projectName = project.title;
+        const taskList: Array<{
+          name: string;
+          dueDate: string | null;
+          isDone: boolean;
+        }> = [];
+
+        // Get all tasks for this project
+        if (project.taskIds && project.taskIds.length > 0) {
+          for (const taskId of project.taskIds) {
+            const task = tasks.entities[taskId];
+            if (!task) continue;
+
+            taskList.push({
+              name: task.title,
+              dueDate: task.dueDay || null,
+              isDone: task.isDone || false,
+            });
+          }
+        }
+
+        // Sort tasks: first by isDone (false first), then by dueDate (earlier first)
+        taskList.sort((a, b) => {
+          // Sort by isDone first (incomplete tasks first)
+          if (a.isDone !== b.isDone) {
+            return a.isDone ? 1 : -1;
+          }
+
+          // Then sort by dueDate (earlier dates first)
+          if (!a.dueDate && !b.dueDate) return 0;
+          if (!a.dueDate) return 1; // Tasks without dueDate go to the end
+          if (!b.dueDate) return -1;
+          return a.dueDate.localeCompare(b.dueDate);
+        });
+
+        // Only add projects that have tasks
+        if (taskList.length > 0) {
+          projectTasks[projectName] = taskList;
+        }
+      }
+
+      return projectTasks;
+    } catch (error) {
+      throw new Error(`Failed to read tasks: ${error}`);
+    }
   });
