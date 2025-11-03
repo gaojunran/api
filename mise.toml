@@ -1,0 +1,7 @@
+[tools]
+bun = "latest"
+fnox = "latest"
+hurl = "latest"
+
+[tasks.dev]
+run = "bun run dev"

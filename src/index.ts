@@ -10,5 +10,5 @@ export const db = drizzle(process.env.DATABASE_URL!);
 const app = new Elysia().use(blogApp).use(lmsApp).listen(3000);
 
 console.log(
-	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );
