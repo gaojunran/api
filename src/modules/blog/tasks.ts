@@ -23,18 +23,29 @@ function getProjectName(projectId: string, projects: any): string {
   return project?.title || "Unknown";
 }
 
-// Helper function to format date as YYYY-MM-DD in Beijing timezone (UTC+8)
-function formatDate(date: Date): string {
-  // Convert to Beijing time (UTC+8)
-  const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return beijingTime.toISOString().split("T")[0];
+// Helper function to get today's date in YYYY-MM-DD format (Beijing timezone)
+function getTodayString(): string {
+  const now = new Date();
+  const beijingDateStr = now.toLocaleString("en-US", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const [month, day, year] = beijingDateStr.split("/");
+  return `${year}-${month}-${day}`;
 }
 
-// Helper function to get current date in Beijing timezone
-function getBeijingDate(): Date {
-  const now = new Date();
-  // Add 8 hours to get Beijing time
-  return new Date(now.getTime() + 8 * 60 * 60 * 1000);
+// Helper function to get date string for a given date (Beijing timezone)
+function getDateString(date: Date): string {
+  const beijingDateStr = date.toLocaleString("en-US", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const [month, day, year] = beijingDateStr.split("/");
+  return `${year}-${month}-${day}`;
 }
 
 export const tasksApp = new Elysia({ prefix: "/tasks" })
@@ -44,15 +55,20 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
       const tasks = data.mainModelData.task;
       const projects = data.mainModelData.project;
 
-      // Get today's tag tasks
-      const todayTag = data.mainModelData.tag.entities.TODAY;
-      const todayTaskIds = todayTag?.taskIds || [];
-
       // Get today's date in YYYY-MM-DD format (Beijing time)
-      const todayString = formatDate(getBeijingDate());
+      const todayString = getTodayString();
 
-      // Build task list
-      const taskList = todayTaskIds
+      // Get all task IDs from all projects
+      const allTaskIds: string[] = [];
+      for (const projectId of projects.ids) {
+        const project = projects.entities[projectId];
+        if (project?.taskIds) {
+          allTaskIds.push(...project.taskIds);
+        }
+      }
+
+      // Build task list with tasks due today
+      const taskList = allTaskIds
         .map((taskId: string) => {
           const task = tasks.entities[taskId];
           if (!task) return null;
@@ -68,6 +84,14 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
         })
         .filter(Boolean);
 
+      // Sort: incomplete tasks first, then completed tasks
+      taskList.sort((a, b) => {
+        if (a.isDone !== b.isDone) {
+          return a.isDone ? 1 : -1;
+        }
+        return 0;
+      });
+
       return taskList;
     } catch (error) {
       throw new Error(`Failed to read tasks: ${error}`);
@@ -79,15 +103,15 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
       const tasks = data.mainModelData.task;
       const projects = data.mainModelData.project;
 
-      // Get date range: today to 7 days from now (Beijing time)
-      const today = getBeijingDate();
-      const sevenDaysLater = new Date(today);
-      sevenDaysLater.setDate(today.getDate() + 6);
+      // Get date range: today to 6 days from now (7 days total, Beijing time)
+      const todayString = getTodayString();
 
-      const todayString = formatDate(today);
-      const sevenDaysLaterString = formatDate(sevenDaysLater);
+      const now = new Date();
+      const sixDaysLater = new Date(now);
+      sixDaysLater.setDate(sixDaysLater.getDate() + 6);
+      const sixDaysLaterString = getDateString(sixDaysLater);
 
-      // Get all tasks from all projects
+      // Get all task IDs from all projects
       const allTaskIds: string[] = [];
       for (const projectId of projects.ids) {
         const project = projects.entities[projectId];
@@ -104,7 +128,7 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
 
           // Filter: only include tasks with dueDay in the next 7 days
           if (!task.dueDay) return null;
-          if (task.dueDay < todayString || task.dueDay > sevenDaysLaterString) {
+          if (task.dueDay < todayString || task.dueDay > sixDaysLaterString) {
             return null;
           }
 
@@ -116,6 +140,17 @@ export const tasksApp = new Elysia({ prefix: "/tasks" })
           };
         })
         .filter(Boolean);
+
+      // Sort: first by isDone (incomplete first), then by dueDate (earlier first)
+      taskList.sort((a, b) => {
+        // Sort by isDone first (incomplete tasks first)
+        if (a.isDone !== b.isDone) {
+          return a.isDone ? 1 : -1;
+        }
+
+        // Then sort by dueDate (earlier dates first)
+        return a.dueDate.localeCompare(b.dueDate);
+      });
 
       return taskList;
     } catch (error) {
