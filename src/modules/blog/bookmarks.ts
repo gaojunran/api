@@ -13,15 +13,15 @@ const typeEnum = t.Enum({
 export const bookmarksApp = new Elysia({ prefix: "/bookmarks" })
   .get(
     "/list",
-    async ({ params }) => {
+    async ({ query: { type } }) => {
       const data = (await db.select().from(bookmarkTable))
         .filter((row) => !row.disabled)
-        .filter((row) => !params.type || row.type === params.type);
+        .filter((row) => !type || row.type === type);
       return data;
     },
     {
-      params: t.Object({
-        type: typeEnum,
+      query: t.Object({
+        type: t.Optional(typeEnum),
       }),
     },
   )
